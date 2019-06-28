@@ -50,5 +50,6 @@ public class PawnTest {
         Assertions.assertThat(pawn.validateDirection(Position.create(1, 2)
                 , Position.create(1, 1), false))
                 .isEqualTo(false);
+
     }
 }

@@ -1,16 +1,30 @@
 package chess.domain.chess.dao;
 
+import org.apache.commons.dbcp.BasicDataSource;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class DBConnection {
+    private static String server = "127.0.0.1";
+    private static String database = "chess";
+    String userName = "Ole";
+    String password = "123";
+    String driver = "com.mysql.cj.jdbc.Driver";
+
+
     public static Connection getConnection() {
         Connection con = null;
         String server = "127.0.0.1";
         String database = "chess";
         String userName = "Ole";
         String password = "123";
+        String driver = "com.mysql.cj.jdbc.Driver";
+
+        BasicDataSource basicDataSource = new BasicDataSource();
+        //basicDataSource.getConnection();
+
 
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");

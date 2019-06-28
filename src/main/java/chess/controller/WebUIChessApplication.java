@@ -15,6 +15,7 @@ import spark.Spark;
 import spark.template.handlebars.HandlebarsTemplateEngine;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,98 +27,102 @@ public class WebUIChessApplication {
     private static ChessBoardDAO chessBoardDAO = new ChessBoardDAO(dbConnection);
     private static RoomDAO roomDAO = new RoomDAO(dbConnection);
 
-    public static void main(String[] args) {
-        externalStaticFileLocation("src/main/resources/templates");
+    public static void main(String[] args) throws SQLException {
+        try {
+            externalStaticFileLocation("src/main/resources/templates");
 
-        get("/", (req, res) -> {
-            Map<String, Object> model = new HashMap<>();
-            return render(model, "index.html");
-        });
+            get("/", (req, res) -> {
+                Map<String, Object> model = new HashMap<>();
+                return render(model, "index.html");
+            });
 
-        get("/start_game", (req, res) -> {
-            Map<String, Object> model = new HashMap<>();
-            ChessBoardDTO chessBoardDTO = new ChessBoardDTO();
-            ChessBoard chessBoard = new ChessBoard(new ChessBoardInitializer());
-            chessBoardDTO.setUnits(chessBoard.getUnits());
+            get("/start_game", (req, res) -> {
+                Map<String, Object> model = new HashMap<>();
+                ChessBoardDTO chessBoardDTO = new ChessBoardDTO();
+                ChessBoard chessBoard = new ChessBoard(new ChessBoardInitializer());
+                chessBoardDTO.setUnits(chessBoard.getUnits());
 
-            roomDAO.add();
-            int roomId = roomDAO.getRecentId();
-            chessBoardDAO.add(chessBoard, roomDAO.select(roomId), roomId);
+                roomDAO.add();
+                int roomId = roomDAO.getRecentId();
+                chessBoardDAO.add(chessBoard, roomDAO.select(roomId), roomId);
 
-            String chessJson = new Gson().toJson(chessBoardDTO);
+                String chessJson = new Gson().toJson(chessBoardDTO);
 
-            model.put("team", chessBoard.getTeam().name());
-            model.put("chessBoard", chessJson);
-            model.put("roomId", roomId);
+                model.put("team", chessBoard.getTeam().name());
+                model.put("chessBoard", chessJson);
+                model.put("roomId", roomId);
 
-            return render(model, "game.html");
-        });
+                return render(model, "game.html");
+            });
 
-        get("/game", (req, res) -> {
-            int roomId = Integer.parseInt(req.queryParams("roomId"));
+            get("/game", (req, res) -> {
+                int roomId = Integer.parseInt(req.queryParams("roomId"));
 
-            Map<String, Object> model = new HashMap<>();
-            ChessBoardDTO chessBoardDTO = new ChessBoardDTO();
-            ChessBoard chessBoard = chessBoardDAO.select(roomId, roomDAO.select(roomId));
+                Map<String, Object> model = new HashMap<>();
+                ChessBoardDTO chessBoardDTO = new ChessBoardDTO();
+                ChessBoard chessBoard = chessBoardDAO.select(roomId, roomDAO.select(roomId));
 
-            if (checkKing(model, chessBoard)) return render(model, "gameover.html");
+                if (checkKing(model, chessBoard)) return render(model, "gameover.html");
 
-            chessBoardDTO.setUnits(chessBoard.getUnits());
+                chessBoardDTO.setUnits(chessBoard.getUnits());
 
-            String chessJson = new Gson().toJson(chessBoardDTO);
+                String chessJson = new Gson().toJson(chessBoardDTO);
 
-            model.put("roomId", roomId);
-            model.put("team", chessBoard.getTeam().name());
-            model.put("chessBoard", chessJson);
-            return render(model, "game.html");
-        });
+                model.put("roomId", roomId);
+                model.put("team", chessBoard.getTeam().name());
+                model.put("chessBoard", chessJson);
+                return render(model, "game.html");
+            });
 
-        post("/game", (req, res) -> {
-            int roomId = Integer.parseInt(req.queryParams("roomId"));
+            post("/game", (req, res) -> {
+                int roomId = Integer.parseInt(req.queryParams("roomId"));
 
-            Map<String, Object> model = new HashMap<>();
+                Map<String, Object> model = new HashMap<>();
 
-            String[] source = req.queryParams("source").split(",");
-            String[] target = req.queryParams("target").split(",");
+                String[] source = req.queryParams("source").split(",");
+                String[] target = req.queryParams("target").split(",");
 
-            Position sourcePosition = Position.create(Integer.parseInt(source[0]), Integer.parseInt(source[1]));
-            Position targetPosition = Position.create(Integer.parseInt(target[0]), Integer.parseInt(target[1]));
+                Position sourcePosition = Position.create(Integer.parseInt(source[0]), Integer.parseInt(source[1]));
+                Position targetPosition = Position.create(Integer.parseInt(target[0]), Integer.parseInt(target[1]));
 
-            ChessBoard chessBoard = chessBoardDAO.select(roomId, roomDAO.select(roomId));
+                ChessBoard chessBoard = chessBoardDAO.select(roomId, roomDAO.select(roomId));
 
-            chessBoard.move(sourcePosition, targetPosition);
-            chessBoard.changeTeam();
+                chessBoard.move(sourcePosition, targetPosition);
+                chessBoard.changeTeam();
 
-            roomDAO.update(roomId, chessBoard.getTeam());
-            chessBoardDAO.delete(roomId);
-            chessBoardDAO.add(chessBoard, roomDAO.select(roomId), roomId);
+                roomDAO.update(roomId, chessBoard.getTeam());
+                chessBoardDAO.delete(roomId);
+                chessBoardDAO.add(chessBoard, roomDAO.select(roomId), roomId);
 
-            ChessBoard chessBoardAfterUpdate = chessBoardDAO.select(roomId, roomDAO.select(roomId));
+                ChessBoard chessBoardAfterUpdate = chessBoardDAO.select(roomId, roomDAO.select(roomId));
 
-            if (checkKing(model, chessBoard)) return render(model, "gameover.html");
+                if (checkKing(model, chessBoard)) return render(model, "gameover.html");
 
-            ChessBoardDTO chessBoardDTO = new ChessBoardDTO();
-            chessBoardDTO.setUnits(chessBoardAfterUpdate.getUnits());
+                ChessBoardDTO chessBoardDTO = new ChessBoardDTO();
+                chessBoardDTO.setUnits(chessBoardAfterUpdate.getUnits());
 
-            String chessJson = new Gson().toJson(chessBoardDTO);
+                String chessJson = new Gson().toJson(chessBoardDTO);
 
-            model.put("roomId", roomId);
-            model.put("chessBoard", chessJson);
-            model.put("team", chessBoardAfterUpdate.getTeam().name());
-            return render(model, "game.html");
+                model.put("roomId", roomId);
+                model.put("chessBoard", chessJson);
+                model.put("team", chessBoardAfterUpdate.getTeam().name());
+                return render(model, "game.html");
 
-        });
+            });
 
-        get("/game_room", (req, res) -> {
-            Map<String, Object> model = new HashMap<>();
-            List<Integer> roomIds = roomDAO.getIds();
-            String roomIdsJson = new Gson().toJson(roomIds);
+            get("/game_room", (req, res) -> {
+                Map<String, Object> model = new HashMap<>();
+                List<Integer> roomIds = roomDAO.getIds();
+                String roomIdsJson = new Gson().toJson(roomIds);
 
-            model.put("roomIds", roomIds);
-            return render(model, "game_room.html");
-        });
+                model.put("roomIds", roomIds);
+                return render(model, "game_room.html");
+            });
 
-        exception();
+            exception();
+        } finally {
+            dbConnection.close();
+        }
     }
 
     private static boolean checkKing(Map<String, Object> model, ChessBoard chessBoard) {
