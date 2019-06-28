@@ -15,13 +15,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ChessBoardDAO {
-    private Connection connection;
 
-    public ChessBoardDAO(Connection connection) {
-        this.connection = connection;
+    public ChessBoardDAO() {
+
     }
 
     public void add(ChessBoard chessBoard, Team team, int roomId) throws SQLException {
+        Connection connection = DBConnection.getConnection();
+
         for (Position position : chessBoard.getUnits().keySet()) {
             String query = "INSERT INTO chess_board (roomId, positionX, positionY, unit) "
                     + "VALUES ( ?, ?, ?, ?)";
@@ -32,9 +33,13 @@ public class ChessBoardDAO {
             pstmt.setString(4, chessBoard.getUnit(position).get().toString());
             pstmt.executeUpdate();
         }
+
+        connection.close();
     }
 
     public ChessBoard select(int roomId, Team team) throws SQLException {
+        Connection connection = DBConnection.getConnection();
+
         String query = "SELECT positionX, positionY,unit  FROM chess_board WHERE roomId = ?";
         PreparedStatement pstmt = connection.prepareStatement(query);
         pstmt.setInt(1, roomId);
@@ -48,13 +53,20 @@ public class ChessBoardDAO {
             String unit = resultSet.getString("unit");
             map.put(Position.create(positionX, positionY), UnitSymbolMapper.getUnit(unit).get());
         }
+
+        connection.close();
         return new ChessBoard(new SettableChessBoardInitializer(map, team));
     }
 
     public void delete(int roomId) throws SQLException {
+        Connection connection = DBConnection.getConnection();
+
         String query = "DELETE FROM chess_board WHERE roomId = ?";
         PreparedStatement pstmt = connection.prepareStatement(query);
         pstmt.setInt(1, roomId);
         pstmt.execute();
+
+        connection.close();
     }
+
 }

@@ -1,7 +1,6 @@
 package chess.controller;
 
 import chess.domain.chess.dao.ChessBoardDAO;
-import chess.domain.chess.dao.DBConnection;
 import chess.domain.chess.dao.RoomDAO;
 import chess.domain.chess.dto.ChessBoardDTO;
 import chess.domain.chess.game.ChessBoard;
@@ -14,7 +13,6 @@ import spark.Response;
 import spark.Spark;
 import spark.template.handlebars.HandlebarsTemplateEngine;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
@@ -23,9 +21,9 @@ import java.util.Map;
 import static spark.Spark.*;
 
 public class WebUIChessApplication {
-    private static Connection dbConnection = DBConnection.getConnection();
-    private static ChessBoardDAO chessBoardDAO = new ChessBoardDAO(dbConnection);
-    private static RoomDAO roomDAO = new RoomDAO(dbConnection);
+
+    private static ChessBoardDAO chessBoardDAO = new ChessBoardDAO();
+    private static RoomDAO roomDAO = new RoomDAO();
 
     public static void main(String[] args) throws SQLException {
 
