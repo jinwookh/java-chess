@@ -45,9 +45,11 @@ public class RoomDAO {
 
         if (!resultSet.next()) throw new SQLException();
 
+        Team team = Team.getTeamByName(resultSet.getString("team"));
+
         connection.close();
 
-        return Team.getTeamByName(resultSet.getString("team"));
+        return team;
 
     }
 
@@ -76,7 +78,8 @@ public class RoomDAO {
 
         if (!resultSet.next()) throw new SQLException();
 
-        return resultSet.getInt("id");
+        int id = resultSet.getInt("id");
+        return id;
     }
 
 }
